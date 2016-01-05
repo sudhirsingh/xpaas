@@ -3,8 +3,8 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.redhat.demo</groupId>
-  <artifactId>xpaasdemo</artifactId>
+  <groupId>#com.redhat.demo</groupId>
+  <artifactId>fuse_xpaas_demo</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <name>Fabric8 :: Quickstarts :: Karaf :: Camel Log</name>
@@ -14,18 +14,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <version.maven-bundle-plugin>2.3.7</version.maven-bundle-plugin>
 
-    <!-- fabric8 version -->
-    <fabric8.version>2.2.82</fabric8.version>
+    <!-- versions for use in mvn plugins as we cannot inherit them from a BOM -->
+    <fuse.version>6.2.1.redhat-084</fuse.version>
+    <fabric8.version>2.2.0.redhat-079</fabric8.version>
     <docker.maven.plugin.version>0.13.6</docker.maven.plugin.version>
+    <karaf.plugin.version>4.0.2.redhat-621079</karaf.plugin.version>
 
-
-
-    <!-- configure the versions you want to use here -->
-    <camel.version>2.16.1</camel.version>
-    <karaf.version>2.4.3</karaf.version>
-    <karaf.plugin.version>4.0.3</karaf.plugin.version>
-
-    <docker.from>fabric8/s2i-karaf:1.2</docker.from>
+    <docker.from>jboss-fuse-6/fis-karaf-openshift:1.0</docker.from>
     <fabric8.dockerUser>fabric8/</fabric8.dockerUser>
     <docker.image>${fabric8.dockerUser}quickstart-karaf-camellog:${project.version}</docker.image>
     <docker.assemblyDescriptor>${basedir}/src/main/fabric8/assembly.xml</docker.assemblyDescriptor>
@@ -40,7 +35,7 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- import fabric8 platfrom bom first -->
+      <!-- fabric8 bom must be before fabric8 bom -->
       <dependency>
         <groupId>io.fabric8</groupId>
         <artifactId>fabric8-project-bom-with-platform-deps</artifactId>
@@ -49,9 +44,9 @@
         <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>org.apache.camel</groupId>
-        <artifactId>camel-parent</artifactId>
-        <version>${camel.version}</version>
+        <groupId>org.jboss.fuse.bom</groupId>
+        <artifactId>jboss-fuse-parent</artifactId>
+        <version>${fuse.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -60,20 +55,22 @@
 
   <dependencies>
 
-    <!-- camel -->
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-core</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-blueprint</artifactId>
-      <scope>provided</scope>
     </dependency>
 
     <!-- Karaf microcontainer dependencies -->
     <dependency>
       <!-- scope is compile so all features (there is only one) are installed into startup.properties,
       and the feature repo itself is not added in etc/org.apache.karaf.features.cfg file -->
-      <groupId>org.apache.karaf.features</groupId>
-      <artifactId>static</artifactId>
-      <version>${karaf.plugin.version}</version>
+      <groupId>org.jboss.fuse</groupId>
+      <artifactId>fuse-karaf-framework</artifactId>
+      <version>${fuse.version}</version>
       <type>kar</type>
       <!-- no need to download kar dependencies -->
       <exclusions>
@@ -82,20 +79,6 @@
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.karaf.assemblies.features</groupId>
-      <artifactId>standard</artifactId>
-      <version>${karaf.version}</version>
-      <classifier>features</classifier>
-      <type>xml</type>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.camel.karaf</groupId>
-      <artifactId>apache-camel</artifactId>
-      <version>${camel.version}</version>
-      <classifier>features</classifier>
-      <type>xml</type>
     </dependency>
   </dependencies>
 
@@ -185,7 +168,8 @@
           </execution>
         </executions>
         <configuration>
-          <karafVersion>v4x</karafVersion>
+          <!-- we are using karaf 2.4.x -->
+          <karafVersion>v24</karafVersion>
           <useReferenceUrls>true</useReferenceUrls>
           <!-- do not include build output directory -->
           <includeBuildOutputDirectory>false</includeBuildOutputDirectory>
@@ -200,15 +184,6 @@
           <startupBundles>
             <bundle>mvn:${project.groupId}/${project.artifactId}/${project.version}</bundle>
           </startupBundles>
-          <blacklistedBundles>
-            <bundle>mvn:org.ops4j.pax.logging/pax-logging-api/1.8.4</bundle>
-            <bundle>mvn:org.ops4j.pax.logging/pax-logging-service/1.8.4</bundle>
-          </blacklistedBundles>
-          <libraries>
-            <library>
-              mvn:org.apache.karaf.jaas/org.apache.karaf.jaas.boot/${karaf.version};type:=boot;export:=true;delegate:=true
-            </library>
-          </libraries>
         </configuration>
       </plugin>
 

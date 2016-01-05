@@ -4,16 +4,16 @@
   "labels": {},
   "metadata": {
     "annotations": {
-      "description": "# Karaf Camel Log QuickStart\n\nThis quickstart shows a simple Apache Camel application that logs a message to the server log every 5th second.\n\nThis example is implemented using solely the XML DSL (there is no Java code). The source code is provided in the following XML file `src/main/resources/OSGI-INF/blueprint/camel-log.xml`.\n\n\n### Building\n\nThe example can be built with\n\n    mvn clean install\n\n\n### Running the example in fabric8\n\nIt is assumed a running Kubernetes platform is already running. If not you can find details how to [get started](http://fabric8.io/guide/getStarted/index.html).\n\nThe example can be built and deployed using a single goal:\n\n    mvn -Pf8-local-deploy\n\nWhen the example runs in fabric8, you can use the OpenShift client tool to inspect the status\n\nTo list all the running pods:\n\n    oc get pods\n\nThen find the name of the pod that runs this quickstart, and output the logs from the running pods with:\n\n    oc logs <name of pod>\n\nYou can also use the fabric8 [web console](http://fabric8.io/guide/console.html) to manage the\nrunning pods, and view logs and much more.\n\n\n### More details\n\nYou can find more details about running this [quickstart](http://fabric8.io/guide/quickstarts/running.html) on the website. This also includes instructions how to change the Docker image user and registry.\n\n",
+      "description": "# Karaf Camel Log QuickStart\n\nThis quickstart shows a simple Apache Camel application that logs a message to the server log every 5th second.\n\nThis example is implemented using solely the XML DSL (there is no Java code). The source code is provided in the following XML file `src/main/resources/OSGI-INF/blueprint/camel-log.xml`.\nIt also shows how Karaf assembly files can be overriden using resources from `src/main/resources/assembly/`. The included sample log file `etc/org.ops4j.pax.logging.cfg` sets the log level to DEBUG. \n\n\n### Building\n\nThe example can be built with\n\n    mvn clean install\n\n\n### Running the example in fabric8\n\nIt is assumed that OpenShift platform is already running. If not you can find details how to [Install OpenShift at your site](https://docs.openshift.com/enterprise/3.1/install_config/install/index.html).\n\nThe example can be built and deployed using a single goal:\n\n    mvn -Pf8-deploy\n\nWhen the example runs in OpenShift, you can use the OpenShift client tool to inspect the status\n\nTo list all the running pods:\n\n    oc get pods\n\nThen find the name of the pod that runs this quickstart, and output the logs from the running pods with:\n\n    oc logs <name of pod>\n\nYou can also use the OpenShift [web console](https://docs.openshift.com/enterprise/3.1/getting_started/developers/developers_console.html#tutorial-video) to manage the\nrunning pods, and view logs and much more.\n\n\n### Running the example using OpenShift S2I template\n\nThe example can also be built and run using the included S2I template quickstart-template.json.\n\nThe application can be run directly by first editing the template file and populating S2I build parameters, including the required parameter GIT_REPO and then executing the command:\n\n    oc new-app -f quickstart-template.json\n\nAlternatively the template file can be used to create an OpenShift application template by executing the command:\n\n    oc create -f quickstart-template.json\n\n\n### More details\n\nYou can find more details about running this [quickstart](http://fabric8.io/guide/quickstarts/running.html) on the website. This also includes instructions how to change the Docker image user and registry.\n\n",
       "iconClass": "icon-java"
     },
     "labels": {},
-    "name": "s2i-quickstart-cdi-camel"
+    "name": "s2i-quickstart-karaf-camel-log"
   },
   "parameters": [
     {
       "name": "APP_NAME",
-      "value": "s2i-quickstart-cdi-camel",
+      "value": "s2i-quickstart-karaf-camel-log",
       "description": "Application Name"
     },
     {
@@ -28,22 +28,22 @@
     },
     {
       "name": "SERVICE_NAME",
-      "value": "s2i-qs-java-camel-cdi",
+      "value": "s2i-qs-karaf-camel-log",
       "description": "Exposed Service name"
     },
     {
       "name": "BUILDER_VERSION",
-      "value": "1.2.5",
+      "value": "1.0",
       "description": "Builder version"
     },
     {
       "name": "APP_VERSION",
-      "value": "2.2.64-SNAPSHOT",
+      "value": "2.2.0.redhat-079",
       "description": "Application version"
     },
     {
       "name": "MAVEN_ARGS",
-      "value": "package -DskipTests -e",
+      "value": "install -DskipTests -e",
       "description": "Arguments passed to mvn in the build"
     },
     {
@@ -55,6 +55,12 @@
       "description": "Maven build directory"
     },
     {
+      "description": "Namespace in which the Fuse ImageStreams are installed. These ImageStreams are normally installed in the openshift namespace. You should only need to modify this if you've installed the ImageStreams in a different namespace/project.",
+      "name": "IMAGE_STREAM_NAMESPACE",
+      "value": "openshift",
+      "required": true
+    },
+    {
       "generate": "expression",
       "name": "BUILD_SECRET",
       "description": "The secret needed to trigger a build",
@@ -62,28 +68,6 @@
     }
   ],
   "objects": [
-    {
-      "kind": "ImageStream",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "s2i-karaf-${APP_NAME}",
-        "creationTimestamp": null,
-        "labels": {
-          "component": "${APP_NAME}",
-          "container": "karaf",
-          "group": "quickstarts",
-          "project": "${APP_NAME}",
-          "provider": "s2i",
-          "version": "${APP_VERSION}"
-        }
-      },
-      "spec": {
-        "dockerImageRepository": "fabric8/s2i-karaf:${BUILDER_VERSION}"
-      },
-      "status": {
-        "dockerImageRepository": ""
-      }
-    },
     {
       "kind": "ImageStream",
       "apiVersion": "v1",
@@ -153,7 +137,8 @@
           "sourceStrategy": {
             "from": {
               "kind": "ImageStreamTag",
-              "name": "s2i-karaf-${APP_NAME}:${BUILDER_VERSION}"
+              "namespace": "${IMAGE_STREAM_NAMESPACE}",
+              "name": "fis-karaf-openshift:${BUILDER_VERSION}"
             },
             "forcePull": true,
             "env": [
